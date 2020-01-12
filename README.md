@@ -1,6 +1,8 @@
 # Hot Reloading for Logs
 An example server that automatically reloads its logging configuration.
 
+The server configuration is loaded **once** on startup. The logging configuration can be updated and reloaded at will. If the `/-/reload` endpoint detects that the configuration has not changed, no action will be taken (indicated in the logs).
+
 ## Demo
 // TODO: Add gif
 
