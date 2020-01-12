@@ -18,6 +18,12 @@ logging:
   format: text
 ```
 
+## Endpoints
+| **Endpoints**  | **Method** | **Description**                     |
+|----------------|------------|-------------------------------------|
+| `/-/config`    | GET        | View the current configuration.     |
+| `/-/reload`    | POST       | Reload the configuration from disk. |
+
 ## Build & Execute
 ```
 $ go build
