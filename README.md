@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/tlkamp/log-reloading)](https://goreportcard.com/report/github.com/tlkamp/log-reloading)
+
 # Hot Reloading for Logs
 An example server that automatically reloads its logging configuration.
 
