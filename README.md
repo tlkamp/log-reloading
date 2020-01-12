@@ -6,8 +6,7 @@ An example server that automatically reloads its logging configuration.
 The server configuration is loaded **once** on startup. The logging configuration can be updated and reloaded at will. If the `/-/reload` endpoint detects that the configuration has not changed, no action will be taken (indicated in the logs).
 
 ## Demo
-// TODO: Add gif
-
+![log-reload-fps](https://user-images.githubusercontent.com/18516698/72223338-41b1d880-3533-11ea-9358-97ee0597ba6d.gif)
 
 ## Configuration
 Configuration is done in `YAML`. The `server` section is required.
