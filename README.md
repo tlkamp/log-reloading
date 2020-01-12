@@ -17,3 +17,9 @@ logging:
   colors: true
   format: text
 ```
+
+## Build & Execute
+```
+$ go build
+$ ./log-reloading
+```
