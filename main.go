@@ -19,22 +19,21 @@ var logger = &log.Logger{
 	Level:     log.ErrorLevel,
 }
 
-const filepath = "config.yaml"
-
 var (
 	listenAddress = flag.String("bind-address", "localhost", "the address to bind to.")
 	serverPort    = flag.Int("port", 8080, "the port to listen on.")
+	configFile    = flag.String("config-file", "config.yaml", "the location of the file to use for configuration.")
 )
 
 func main() {
 	flag.Parse()
-	appConfig = loadConfigFromFile(filepath)
+	appConfig = loadConfigFromFile(*configFile)
 	serverAddress := fmt.Sprintf("%s:%d", *listenAddress, *serverPort)
 
 	http.HandleFunc("/-/reload", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "POST":
-			loadLoggingConfig(filepath, appConfig, logger)
+			loadLoggingConfig(*configFile, appConfig, logger)
 			w.WriteHeader(http.StatusOK)
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)

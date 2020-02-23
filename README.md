@@ -9,20 +9,27 @@ The logging configuration can be updated and reloaded at will. If the `/-/reload
 ![log-reload-fps](https://user-images.githubusercontent.com/18516698/72223338-41b1d880-3533-11ea-9358-97ee0597ba6d.gif)
 
 ## Configuration
-The server can be configured via flags on the command-line:
-```shell
-$ ./log-reloading -h
-Usage of ./log-reloading:
-  -bind-address string
-        the address to bind to. (default "localhost")
-  -port int
-        the port to listen on. (default 8080)
+The server can be configured via flags on the command-line.
 
-# Start the server on port 9090
-$ ./log-reloading -port 9090
+
+### Server
+
+#### Available CLI Flags
+| **Flag**         | **Type**    | **Default** | **Description**                              |
+|------------------|-------------|-------------|----------------------------------------------|
+| `-bind-address`  | String      | localhost   | The address at which to listen for requests. |
+| `-config-file`   | String      | config.yaml | The path to the config file to use.          |
+| `-port`          | Int         | 8080        | The port on which to listen for connections. |
+
+**Example**
+
+```console
+# Start the server on port 9090 using a config file called 'example.yaml'
+$ ./log-reloading -port 9090 -config-file=example.yaml
 INFO[0000] Server is starting at localhost:9090
 ```
 
+### Logging
 Logging configuration is done in `YAML`.
 
 ```yaml
@@ -39,9 +46,9 @@ logging:
 | `/-/reload`    | POST       | Reload the configuration from disk. |
 
 ## Build & Execute
-```
-$ go build
-$ ./log-reloading
+```console
+$ make run
+Removing log-reloading
 INFO[0000] Server is starting at localhost:8080
 INFO[0008] 127.0.0.1:53863 GET /-/config
 INFO[0013] 127.0.0.1:53865 POST /-/reload
