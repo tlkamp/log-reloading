@@ -23,7 +23,7 @@ $ ./log-reloading -port 9090
 INFO[0000] Server is starting at localhost:9090
 ```
 
-Logging onfiguration is done in `YAML`.
+Logging configuration is done in `YAML`.
 
 ```yaml
 logging:
