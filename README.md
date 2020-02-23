@@ -1,20 +1,31 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/tlkamp/log-reloading)](https://goreportcard.com/report/github.com/tlkamp/log-reloading)
 
 # Hot Reloading for Logs
-An example server that automatically reloads its logging configuration.
+An example server that can live-reload logging configuration.
 
-The server configuration is loaded **once** on startup. The logging configuration can be updated and reloaded at will. If the `/-/reload` endpoint detects that the configuration has not changed, no action will be taken (indicated in the logs).
+The logging configuration can be updated and reloaded at will. If the `/-/reload` endpoint detects that the configuration has not changed, no action will be taken (indicated in the logs).
 
 ## Demo
 ![log-reload-fps](https://user-images.githubusercontent.com/18516698/72223338-41b1d880-3533-11ea-9358-97ee0597ba6d.gif)
 
 ## Configuration
-Configuration is done in `YAML`. The `server` section is required.
+The server can be configured via flags on the command-line:
+```shell
+$ ./log-reloading -h
+Usage of ./log-reloading:
+  -bind-address string
+        the address to bind to. (default "localhost")
+  -port int
+        the port to listen on. (default 8080)
+
+# Start the server on port 9090
+$ ./log-reloading -port 9090
+INFO[0000] Server is starting at localhost:9090
+```
+
+Logging onfiguration is done in `YAML`.
 
 ```yaml
-server:
-  address: localhost
-  port: "8080"
 logging:
   level: info
   colors: true

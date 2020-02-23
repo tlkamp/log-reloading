@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -20,9 +21,15 @@ var logger = &log.Logger{
 
 const filepath = "config.yaml"
 
+var (
+	listenAddress = flag.String("bind-address", "localhost", "the address to bind to.")
+	serverPort    = flag.Int("port", 8080, "the port to listen on.")
+)
+
 func main() {
+	flag.Parse()
 	appConfig = loadConfigFromFile(filepath)
-	serverAddress := appConfig.Server.Address + ":" + appConfig.Server.Port
+	serverAddress := fmt.Sprintf("%s:%d", *listenAddress, *serverPort)
 
 	http.HandleFunc("/-/reload", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -81,7 +88,6 @@ func setLogConfig(lc *logging, l *log.Logger) {
 
 func loadConfigFromFile(path string) *config {
 	newConfig := &config{}
-	loadServerConfig(path, newConfig)
 	loadLoggingConfig(path, newConfig, logger)
 	return newConfig
 }
@@ -112,25 +118,6 @@ func loadLoggingConfig(path string, current *config, l *log.Logger) {
 		logger.Info("Hashes match. Skipping reload.")
 	}
 
-}
-
-func loadServerConfig(path string, in *config) {
-	conf := readFile(path)
-
-	type temp struct { // wrap server in a temporary outer struct
-		Server server `yaml:"server"`
-	}
-
-	newServer := temp{}
-	yaml.Unmarshal(conf, &newServer)
-	if newServer.Server.Address == "" {
-		logger.Error("Address is required.")
-		os.Exit(1)
-	} else if newServer.Server.Port == "" {
-		logger.Error("Port is required.")
-		os.Exit(1)
-	}
-	in.Server = newServer.Server
 }
 
 func readFile(path string) []byte {
