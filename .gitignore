@@ -1,3 +1,5 @@
 # Ignore the binary from go build
 log-reloading
 
+# Ignore IDE files
+.idea/

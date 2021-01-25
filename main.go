@@ -13,6 +13,8 @@ import (
 )
 
 var appConfig *config
+
+// We need something to start with
 var logger = &log.Logger{
 	Out:       os.Stdout,
 	Formatter: new(log.TextFormatter),
@@ -33,7 +35,7 @@ func main() {
 	http.HandleFunc("/-/reload", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "POST":
-			loadLoggingConfig(*configFile, appConfig, logger)
+			loadLoggingConfig(*configFile, appConfig)
 			w.WriteHeader(http.StatusOK)
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
@@ -46,20 +48,14 @@ func main() {
 	})
 
 	logger.Printf("Server is starting at %s", serverAddress)
-	http.ListenAndServe(serverAddress, logRequest(http.DefaultServeMux))
-}
-
-func getEnvDefault(env string, dflt string) string {
-	if res := os.Getenv(env); len(res) > 0 {
-		return res
+	if err := http.ListenAndServe(serverAddress, logRequest(http.DefaultServeMux)); err != http.ErrServerClosed {
+		log.Error(err)
 	}
-
-	return dflt
 }
 
 func logRequest(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+		logger.Println(fmt.Sprintf("%s %s %s", r.RemoteAddr, r.Method, r.URL))
 		handler.ServeHTTP(w, r)
 	})
 }
@@ -75,11 +71,7 @@ func setLogConfig(lc *logging, l *log.Logger) {
 
 	switch lc.Format {
 	case "text":
-		if !lc.Colors {
-			l.SetFormatter(&log.TextFormatter{DisableColors: true})
-		} else {
-			l.SetFormatter(new(log.TextFormatter))
-		}
+		l.SetFormatter(&log.TextFormatter{DisableColors: lc.Colors})
 	default:
 		l.SetFormatter(new(log.JSONFormatter))
 	}
@@ -87,11 +79,11 @@ func setLogConfig(lc *logging, l *log.Logger) {
 
 func loadConfigFromFile(path string) *config {
 	newConfig := &config{}
-	loadLoggingConfig(path, newConfig, logger)
+	loadLoggingConfig(path, newConfig)
 	return newConfig
 }
 
-func loadLoggingConfig(path string, current *config, l *log.Logger) {
+func loadLoggingConfig(path string, current *config) {
 	conf := readFile(path)
 
 	type temp struct { // wrap logging in a temporary outer struct
@@ -114,9 +106,8 @@ func loadLoggingConfig(path string, current *config, l *log.Logger) {
 		current.Logging = logConf.Logging
 		setLogConfig(&logConf.Logging, logger)
 	} else {
-		logger.Info("Hashes match. Skipping reload.")
+		logger.Info("No change detected. Skipping reload.")
 	}
-
 }
 
 func readFile(path string) []byte {

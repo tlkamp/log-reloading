@@ -1,7 +1,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/tlkamp/log-reloading)](https://goreportcard.com/report/github.com/tlkamp/log-reloading)
 
 # Hot Reloading for Logs
-An example server that can live-reload logging configuration.
+An example server that can live-reload logging configuration. The server itself just logs requests and manages its own config.
 
 The logging configuration can be updated and reloaded at will. If the `/-/reload` endpoint detects that the configuration has not changed, no action will be taken (indicated in the logs).
 
@@ -18,7 +18,7 @@ The server can be configured via flags on the command-line.
 | **Flag**         | **Type**    | **Default** | **Description**                              |
 |------------------|-------------|-------------|----------------------------------------------|
 | `-bind-address`  | String      | localhost   | The address at which to listen for requests. |
-| `-config-file`   | String      | config.yaml | The path to the config file to use.          |
+| `-config-file`     | String      | config.yaml  | The path to the config file to use.            |
 | `-port`          | Int         | 8080        | The port on which to listen for connections. |
 
 **Example**
@@ -30,20 +30,20 @@ INFO[0000] Server is starting at localhost:9090
 ```
 
 ### Logging
-Logging configuration is done in `YAML`.
+Logging configuration is in `YAML`.
 
 ```yaml
 logging:
-  level: info
-  colors: true
-  format: text
+  level: info  # Any of [debug, info, warn, error, fatal, panic]
+  colors: true # true or false
+  format: text # text or json
 ```
 
 ## Endpoints
 | **Endpoints**  | **Method** | **Description**                     |
 |----------------|------------|-------------------------------------|
-| `/-/config`    | GET        | View the current configuration.     |
-| `/-/reload`    | POST       | Reload the configuration from disk. |
+| `/-/config`     | GET        | View the current configuration.      |
+| `/-/reload`    | POST       | Reload the configuration from disk.  |
 
 ## Build & Execute
 ```console
