@@ -4,6 +4,7 @@ import "fmt"
 
 type config struct {
 	Logging logging
+	Hash    string `yaml:"-"` // Never display the hash to the user
 }
 
 func (c config) ToString() string {
@@ -14,5 +15,4 @@ type logging struct {
 	Level  string `yaml:"level"`
 	Format string `yaml:"format"`
 	Colors bool   `yaml:"colors"`
-	Hash   string `yaml:"-"` // This field is never read or displayed except in debug messages
 }

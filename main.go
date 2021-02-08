@@ -1,18 +1,18 @@
 package main
 
 import (
+	"crypto/sha256"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 
-	hs "github.com/mitchellh/hashstructure"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
-var appConfig *config
+var appConfig = &config{}
 
 // We need something to start with
 var logger = &log.Logger{
@@ -29,12 +29,15 @@ var (
 
 func main() {
 	flag.Parse()
-	appConfig = loadConfigFromFile(*configFile)
+
+	// Read the file and compute its hash upon startup
+	loadLoggingConfig(*configFile, appConfig)
 	serverAddress := fmt.Sprintf("%s:%d", *listenAddress, *serverPort)
 
+	// Register the HTTP handlers
 	http.HandleFunc("/-/reload", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
-		case "POST":
+		case http.MethodPost:
 			loadLoggingConfig(*configFile, appConfig)
 			w.WriteHeader(http.StatusOK)
 		default:
@@ -43,16 +46,24 @@ func main() {
 	})
 
 	http.HandleFunc("/-/config", func(w http.ResponseWriter, r *http.Request) {
-		content, _ := yaml.Marshal(&appConfig)
-		w.Write(content)
+		switch r.Method {
+		case http.MethodGet:
+			content, _ := yaml.Marshal(&appConfig)
+			w.WriteHeader(http.StatusOK)
+			w.Write(content)
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
 	})
 
+	// Start the server!
 	logger.Printf("Server is starting at %s", serverAddress)
 	if err := http.ListenAndServe(serverAddress, logRequest(http.DefaultServeMux)); err != http.ErrServerClosed {
-		log.Error(err)
+		logger.Error(err)
 	}
 }
 
+// Log the requests coming into our web server
 func logRequest(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger.Println(fmt.Sprintf("%s %s %s", r.RemoteAddr, r.Method, r.URL))
@@ -60,6 +71,7 @@ func logRequest(handler http.Handler) http.Handler {
 	})
 }
 
+// Parse the logging configuration into something useable
 func setLogConfig(lc *logging, l *log.Logger) {
 	level, err := log.ParseLevel(lc.Level)
 	if err != nil {
@@ -71,43 +83,37 @@ func setLogConfig(lc *logging, l *log.Logger) {
 
 	switch lc.Format {
 	case "text":
-		l.SetFormatter(&log.TextFormatter{DisableColors: lc.Colors})
-	default:
+		l.SetFormatter(&log.TextFormatter{DisableColors: !lc.Colors})
+	case "json":
 		l.SetFormatter(new(log.JSONFormatter))
+	default:
+		l.SetFormatter(&log.TextFormatter{DisableColors: !lc.Colors})
 	}
-}
-
-func loadConfigFromFile(path string) *config {
-	newConfig := &config{}
-	loadLoggingConfig(path, newConfig)
-	return newConfig
 }
 
 func loadLoggingConfig(path string, current *config) {
+	logger.Debug("Reading configuration file from ", path)
 	conf := readFile(path)
+	hash := hashConfig(conf)
 
-	type temp struct { // wrap logging in a temporary outer struct
-		Logging logging `yaml:"logging"`
-	}
+	logger.Debug("Config file hash: ", hash)
 
-	logConf := temp{}
+	logConf := config{Hash: hash}
 	yaml.Unmarshal(conf, &logConf)
-	h, _ := hs.Hash(logConf, nil)
-	newHash := fmt.Sprintf("%d", h)
 
-	if (logging{}) == current.Logging { // initial configuration load
-		current.Logging = logConf.Logging
-		current.Logging.Hash = newHash
-		setLogConfig(&current.Logging, logger)
-	} else if current.Logging.Hash != newHash {
+	if current.Hash != hash {
+		current.Hash = hash
 		logger.Info("Change in logging configuration found! Reloading configuration")
-		logger.Debugf("Hash before: %s Hash after: %s", current.Logging.Hash, newHash)
-		logConf.Logging.Hash = newHash
 		current.Logging = logConf.Logging
 		setLogConfig(&logConf.Logging, logger)
 	} else {
 		logger.Info("No change detected. Skipping reload.")
 	}
+}
+
+// Do not compute the hash this way if your config file is large
+func hashConfig(config []byte) string {
+	return fmt.Sprintf("%x", sha256.Sum256(config))
 }
 
 func readFile(path string) []byte {
