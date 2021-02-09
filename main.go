@@ -27,39 +27,24 @@ var (
 	configFile    = flag.String("config-file", "config.yaml", "the location of the file to use for configuration.")
 )
 
-func main() {
-	flag.Parse()
+var reloadHandler = func(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		loadLoggingConfig(*configFile, appConfig)
+		w.WriteHeader(http.StatusOK)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
 
-	// Read the file and compute its hash upon startup
-	loadLoggingConfig(*configFile, appConfig)
-	serverAddress := fmt.Sprintf("%s:%d", *listenAddress, *serverPort)
-
-	// Register the HTTP handlers
-	http.HandleFunc("/-/reload", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			loadLoggingConfig(*configFile, appConfig)
-			w.WriteHeader(http.StatusOK)
-		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
-		}
-	})
-
-	http.HandleFunc("/-/config", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			content, _ := yaml.Marshal(&appConfig)
-			w.WriteHeader(http.StatusOK)
-			w.Write(content)
-		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
-		}
-	})
-
-	// Start the server!
-	logger.Printf("Server is starting at %s", serverAddress)
-	if err := http.ListenAndServe(serverAddress, logRequest(http.DefaultServeMux)); err != http.ErrServerClosed {
-		logger.Error(err)
+var configHandler = func(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		content, _ := yaml.Marshal(&appConfig)
+		w.WriteHeader(http.StatusOK)
+		w.Write(content)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
@@ -69,6 +54,24 @@ func logRequest(handler http.Handler) http.Handler {
 		logger.Println(fmt.Sprintf("%s %s %s", r.RemoteAddr, r.Method, r.URL))
 		handler.ServeHTTP(w, r)
 	})
+}
+
+func main() {
+	flag.Parse()
+
+	// Read the file and compute its hash upon startup
+	loadLoggingConfig(*configFile, appConfig)
+	serverAddress := fmt.Sprintf("%s:%d", *listenAddress, *serverPort)
+
+	// Register the HTTP handlers
+	http.HandleFunc("/-/reload", reloadHandler)
+	http.HandleFunc("/-/config", configHandler)
+
+	// Start the server!
+	logger.Printf("Server is starting at %s", serverAddress)
+	if err := http.ListenAndServe(serverAddress, logRequest(http.DefaultServeMux)); err != http.ErrServerClosed {
+		logger.Error(err)
+	}
 }
 
 // Parse the logging configuration into something useable
